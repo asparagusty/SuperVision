@@ -3,16 +3,13 @@ from PIL import Image
 import numpy as np
 import os
 import tensorflow as tf
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 import gdown
 
 # ------------------------------
-# Download weights if they don't exist
+# Download weights from GitHub release
 # ------------------------------
-WEIGHTS_URL = "https://github.com/asparagusty/SuperVision/releases/download/v1.0.0/model.h5"
-WEIGHTS_PATH = "model.h5"
+WEIGHTS_URL = "https://github.com/asparagusty/SuperVision/releases/download/v1.0.0/model.weights.h5"
+WEIGHTS_PATH = "model.weights.h5"
 
 if not os.path.exists(WEIGHTS_PATH):
     st.info("Downloading pre-trained model weights...")
@@ -21,14 +18,14 @@ if not os.path.exists(WEIGHTS_PATH):
 # ------------------------------
 # Define model architecture
 # ------------------------------
-base_model = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
+base_model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
 base_model.trainable = False
 
-model = Sequential([
+model = tf.keras.Sequential([
     base_model,
-    GlobalAveragePooling2D(),
-    Dense(128, activation='relu'),
-    Dense(2, activation='softmax')
+    tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(2, activation='softmax')
 ])
 
 # Load weights
@@ -54,4 +51,5 @@ if uploaded_file:
         st.success("It's a Cat! 🐱")
     else:
         st.success("It's a Dog! 🐶")
+
 
