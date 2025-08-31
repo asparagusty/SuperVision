@@ -1,33 +1,48 @@
+# app.py
 import streamlit as st
+from PIL import Image
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import os
-import requests
+import tensorflow as tf
+import gdown
 
-st.title("🐶🐱 Cat vs Dog Classifier (SuperVision)")
-
+# ------------------------------
+# Download the model if it doesn't exist
+# ------------------------------
+MODEL_URL = "https://github.com/asparagusty/SuperVision/releases/download/v1.0.0/model.h5"
 MODEL_PATH = "model.h5"
-MODEL_URL = "https://github.com/asparagusty/SuperVision/releases/download/v1.0.0/model.h5"  # Replace with GitHub raw link or gdown link
 
 if not os.path.exists(MODEL_PATH):
-    st.info("Downloading model...")
-    r = requests.get(MODEL_URL, allow_redirects=True)
-    open(MODEL_PATH, 'wb').write(r.content)
-    st.success("Model downloaded successfully!")
+    st.info("Downloading pre-trained model...")
+    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
-# Load model
-model = tf.keras.models.load_model(MODEL_PATH)
-class_labels = ["Cat", "Dog"]
+# ------------------------------
+# Load the model
+# ------------------------------
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+except Exception as e:
+    st.error(f"Failed to load model: {e}")
 
-uploaded_file = st.file_uploader("Upload an image...", type=["jpg","jpeg","png"])
+# ------------------------------
+# App title
+# ------------------------------
+st.title("Dog vs Cat Classifier 🐶🐱")
+
+# ------------------------------
+# Upload image
+# ------------------------------
+uploaded_file = st.file_uploader("Upload an image of a cat or dog", type=["jpg", "jpeg", "png"])
 if uploaded_file:
-    img = image.load_img(uploaded_file, target_size=(224,224))
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)/255.0
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction[0])
-    confidence = prediction[0][predicted_class]
-    st.image(img, caption="Uploaded Image", use_column_width=True)
-    st.markdown(f"### Prediction: **{class_labels[predicted_class]}** 🐾")
-    st.write(f"Confidence: {confidence:.2f}")
+    image = Image.open(uploaded_file).resize((150, 150))
+    st.image(image, caption="Uploaded Image", use_column_width=True)
+
+    # Preprocess image
+    img_array = np.expand_dims(np.array(image) / 255.0, axis=0)
+    
+    # Predict
+    prediction = model.predict(img_array)[0][0]
+    if prediction > 0.5:
+        st.success("It's a Dog! 🐶")
+    else:
+        st.success("It's a Cat! 🐱")
